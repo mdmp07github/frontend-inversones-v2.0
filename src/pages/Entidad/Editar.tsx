@@ -275,7 +275,7 @@ function Editar() {
               <InputNumber form={form} name="idValor" label="Valor" placeholder="Ingrese valor" maxDecimal={4} fixed binding />
             </div>
             <div className="flex gap-2 m-1 mt-5">
-              <InputTextArea form={form} name="idDescripcion" label="Descripción" placeholder="Ingrese descripción" />
+              <InputTextArea form={form} name="idDescripcion" label="Descripción" rows={12} placeholder="Ingrese descripción" />
             </div>
           </form>
         </Form>

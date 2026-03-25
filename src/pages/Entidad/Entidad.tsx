@@ -1,5 +1,5 @@
 import { TrendingUp } from "lucide-react"
-import { Bar, BarChart, CartesianGrid, Cell, LabelList } from "recharts"
+import { Bar, BarChart, CartesianGrid, Cell, LabelList, ReferenceLine, ResponsiveContainer, XAxis, YAxis } from "recharts"
 import {
   Card,
   CardContent,
@@ -317,6 +317,11 @@ function Entidad() {
     {
       label: "Años",
       options: [
+        { ico: <Icons icon="trading" />, cod: "2020", des: "2020" },
+        { ico: <Icons icon="trading" />, cod: "2021", des: "2021" },
+        { ico: <Icons icon="trading" />, cod: "2022", des: "2022" },
+        { ico: <Icons icon="trading" />, cod: "2023", des: "2023" },
+        { ico: <Icons icon="trading" />, cod: "2024", des: "2024" },
         { ico: <Icons icon="trading" />, cod: "2025", des: "2025" },
         { ico: <Icons icon="trading" />, cod: "2026", des: "2026" },
         { ico: <Icons icon="trading" />, cod: "2027", des: "2027" }
@@ -548,11 +553,11 @@ function Entidad() {
             </div>
           </CardHeader>
           <CardContent className="flex-1 min-h-0 relative">
-            <ChartContainer config={chartConfig} className="h-full w-full">
+            {/* <ChartContainer config={chartConfig} className="h-full w-full">
               <BarChart
                 accessibilityLayer
                 data={chartData}
-                margin={{ top: 30, right: 20, left: 20, bottom: 50 }}
+                margin={{ top: 30, right: 0, left: 0, bottom: 50 }}
                 style={{ overflow: "visible" }}
               >
                 <CartesianGrid vertical={false} />
@@ -612,6 +617,86 @@ function Entidad() {
                   ))}
                 </Bar>
               </BarChart>
+            </ChartContainer> */}
+            <ChartContainer config={chartConfig} className="h-full w-full">
+              <div
+                className="w-full h-full"
+                style={{
+                  overflowX: 'auto',
+                  overflowY: 'hidden',
+                  display: 'block'
+                }}
+              >
+                <div
+                  style={{
+                    width: `${chartData.length * 100}px`, // Ajusta el número (100) según el ancho que quieras por barra
+                    minWidth: "100%",
+                    height: "100%"
+                  }}
+                >
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      accessibilityLayer
+                      data={chartData}
+                      margin={{ top: 30, right: 20, left: 20, bottom: 50 }}
+                      style={{ overflow: "visible" }}
+                    >
+                      <CartesianGrid vertical={false} />
+                      <ChartTooltip
+                        cursor={false}
+                        content={
+                          <ChartTooltipContent
+                            indicator="dot"
+                            labelKey="vAccion"
+                            formatter={(value, name, item) => [" Valor de acción: ", item.payload.vAccion]}
+                          />
+                        }
+                      />
+                      <Bar
+                        dataKey="valor"
+                        onClick={(data, index, e: any) => {
+                          const rect = e.currentTarget.ownerSVGElement.getBoundingClientRect()
+                          const clickX = e.clientX - rect.left
+                          const clickY = e.clientY - rect.top
+                          const popoverWidth = 320
+                          const popoverHeight = 160
+                          const margin = 20
+                          let posX = clickX
+                          let posY = clickY
+                          let transform = "translate(-50%, -120%)"
+                          if (clickX + popoverWidth > rect.width - margin) {
+                            posX = clickX - 160
+                          } else {
+                            posX = clickX + 160
+                          }
+                          if (clickY + popoverHeight > rect.height - margin) {
+                            transform = "translate(-50%, -10%)"
+                            posY = clickY - 260
+                          } else {
+                            transform = "translate(-50%, -120%)"
+                            posY = clickY + 0
+                          }
+                          setSelectedBar(data.payload)
+                          setPopoverPos({ x: posX, y: posY, transform })
+                          setOpenPopover(true)
+                        }}
+                      >
+                        <LabelList
+                          dataKey="fullLabel"
+                          position="top"
+                          content={(props) => renderCustomLabel(chartData, props)}
+                        />
+                        {chartData.map((item, index) => (
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={item.valor > 0 ? "#089981" : "#F23645"}
+                          />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
             </ChartContainer>
             {openPopover && selectedBar && (
               <div
@@ -671,8 +756,6 @@ function Entidad() {
           </DialogHeader>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmitFiltros)} className="flex flex-col gap-3">
-              {/* <InputPicker form={form} name="idPkrRangoFechas" type="range" format="dd/mm/yyyy" placeholder="Ingrese Fechas" label="Rango" />
-              <InputSingleSelect form={form} name="idCbxAnio" data={oAnios} label="Año" placeholder="-- Seleccione --" filter selIcon /> */}
               <RadioGroup
                 defaultValue={form.getValues().tipoFiltro}
                 value={form.watch("tipoFiltro")}
