@@ -117,7 +117,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
                <TooltipTrigger asChild>
                   {button}
                </TooltipTrigger>
-               <TooltipContent>
+               <TooltipContent className="z-10000000">
                   {tooltip}
                </TooltipContent>
             </Tooltip>

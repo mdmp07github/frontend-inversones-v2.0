@@ -23,6 +23,7 @@ import { Form } from "@/components/ui/form"
 import Icons from "@/images/icons/icons"
 import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
+import { ScrollArea } from "@/components/ui/scroll-area"
 import { useNavigate } from "react-router-dom"
 import { useEntidad } from "@/context/Entidad/EntidadContext"
 import { useModalMessage } from "@/context/Components/ModalMessageContext"
@@ -618,12 +619,13 @@ function Entidad() {
                 </Bar>
               </BarChart>
             </ChartContainer> */}
-            <ChartContainer config={chartConfig} className="h-full w-full">
+            {/* <ChartContainer config={chartConfig} className="h-full w-full">
               <div
                 className="w-full h-full"
                 style={{
                   overflowX: 'auto',
                   overflowY: 'hidden',
+                  position: 'relative',
                   display: 'block'
                 }}
               >
@@ -655,30 +657,24 @@ function Entidad() {
                       <Bar
                         dataKey="valor"
                         onClick={(data, index, e: any) => {
-                          const rect = e.currentTarget.ownerSVGElement.getBoundingClientRect()
-                          const clickX = e.clientX - rect.left
-                          const clickY = e.clientY - rect.top
-                          const popoverWidth = 320
-                          const popoverHeight = 160
-                          const margin = 20
-                          let posX = clickX
-                          let posY = clickY
-                          let transform = "translate(-50%, -120%)"
-                          if (clickX + popoverWidth > rect.width - margin) {
-                            posX = clickX - 160
-                          } else {
-                            posX = clickX + 160
-                          }
-                          if (clickY + popoverHeight > rect.height - margin) {
-                            transform = "translate(-50%, -10%)"
-                            posY = clickY - 260
-                          } else {
-                            transform = "translate(-50%, -120%)"
-                            posY = clickY + 0
-                          }
-                          setSelectedBar(data.payload)
-                          setPopoverPos({ x: posX, y: posY, transform })
-                          setOpenPopover(true)
+                          if (!data) return;
+
+                          // Obtenemos el punto exacto del click dentro del SVG
+                          const rect = e.currentTarget.ownerSVGElement.getBoundingClientRect();
+                          const posX = e.clientX - rect.left;
+                          const posY = e.clientY - rect.top;
+
+                          // Determinamos si el popover debe abrirse a la izquierda o derecha para no salirse del contenedor
+                          const isNearRightEdge = posX + 320 > (chartData.length * 100);
+
+                          setSelectedBar(data.payload);
+                          setPopoverPos({
+                            x: posX,
+                            y: posY,
+                            // Ajustamos el transform para que no tape el click y sea dinámico
+                            transform: isNearRightEdge ? "translate(-100%, -100%)" : "translate(0%, -100%)"
+                          });
+                          setOpenPopover(true);
                         }}
                       >
                         <LabelList
@@ -695,45 +691,147 @@ function Entidad() {
                       </Bar>
                     </BarChart>
                   </ResponsiveContainer>
+                  {openPopover && selectedBar && (
+                    <div
+                      ref={popoverRef}
+                      className="absolute w-80 bg-white dark:bg-neutral-900 border shadow-lg rounded-md p-3 text-sm z-999999 animate-in fade-in zoom-in-95 duration-150"
+                      style={{
+                        left: popoverPos.x + 0,
+                        top: popoverPos.y + 0,
+                        transform: popoverPos.transform,
+                        pointerEvents: 'auto'
+                      }}
+                    >
+                      <div className="flex justify-between w-full content-center">
+                        <span className="font-semibold text-xl mb-2 content-center">Fecha: {selectedBar.fullLabel.split(" ")[0]}</span>
+                        <div className="flex gap-2">
+                          <Button variant="yellow" size="icon" tooltip="Editar" onClick={() => on_click_editar(selectedBar)}>
+                            <Icons icon="edit" />
+                          </Button>
+                          <Button variant="red" size="icon" tooltip="Eliminar" onClick={() => on_click_eliminar(selectedBar)}>
+                            <Icons icon="delete" />
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="mt-1 wrap-break-word whitespace-normal mb-4">
+                        <ScrollArea className="h-30">
+                          <span className="font-semibold">Descripción:</span> {selectedBar.description}
+                        </ScrollArea>
+                      </div>
+                      <div className="flex justify-end gap-2 mt-3">
+                        <Button variant="orange">
+                          <Icons icon="pdf" />
+                          Ver PDF
+                        </Button>
+                        <Button variant="blue">
+                          <Icons icon="image" />
+                          Ver Imagen
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </ChartContainer> */}
+            <ChartContainer config={chartConfig} className="h-full w-full">
+              <div
+                className="w-full h-full"
+                style={{
+                  overflowX: 'auto',
+                  overflowY: 'hidden',
+                  position: 'relative',
+                }}
+              >
+                <div
+                  style={{
+                    width: `${chartData.length * 100}px`,
+                    minWidth: "100%",
+                    height: "100%",
+                  }}
+                >
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={chartData}
+                      margin={{ top: 30, right: 20, left: 20, bottom: 50 }}
+                    >
+                      <CartesianGrid vertical={false} />
+                      <Bar
+                        dataKey="valor"
+                        onClick={(data, index, e: React.MouseEvent<SVGElement>) => {
+                          if (!data) return;
+                          const rect = e.currentTarget.getBoundingClientRect();
+                          const xCenter = rect.left + rect.width / 2;
+                          const yTop = rect.top;
+
+                          setSelectedBar(data.payload);
+                          setPopoverPos({
+                            x: xCenter,
+                            y: yTop,
+                            transform: "translate(-50%, -105%)"
+                          });
+                          setOpenPopover(true);
+                        }}
+                      >
+                        <LabelList
+                          dataKey="fullLabel"
+                          position="top"
+                          content={(props) => renderCustomLabel(chartData, props)}
+                        />
+                        {chartData.map((item, index) => (
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={item.valor > 0 ? "#089981" : "#F23645"}
+                          />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                  {openPopover && selectedBar && (
+                    <div
+                      ref={popoverRef}
+                      className="fixed w-80 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-[0_20px_60px_rgba(0,0,0,0.5)] rounded-xl p-4 animate-in fade-in zoom-in-95 duration-200"
+                      style={{
+                        left: `${popoverPos.x - 200}px`,
+                        top: `${popoverPos.y + 10}px`,
+                        transform: popoverPos.transform,
+                        zIndex: 9999999,
+                        pointerEvents: 'auto',
+                      }}
+                    >
+                      <div className="flex justify-between items-center mb-3">
+                        <span className="font-bold text-lg text-neutral-900 dark:text-neutral-50">
+                          Fecha: {selectedBar.fullLabel.split(" ")[0]}
+                        </span>
+                        <div className="flex gap-2">
+                          <Button variant="yellow" size="icon" tooltip="Editar" onClick={() => on_click_editar(selectedBar)}>
+                            <Icons icon="edit" />
+                          </Button>
+                          <Button variant="red" size="icon" tooltip="Eliminar" onClick={() => on_click_eliminar(selectedBar)}>
+                            <Icons icon="delete" />
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="mb-4">
+                        <p className="text-lg underline font-bold mb-1">Descripción</p>
+                        <ScrollArea className="h-24 text-sm">
+                          {selectedBar.description}
+                        </ScrollArea>
+                      </div>
+                      <div className="flex gap-2 justify-end">
+                        <Button variant="orange"><Icons icon="pdf" /> PDF</Button>
+                        {/* <Button variant="blue"><Icons icon="image" /> Imagen</Button> */}
+                      </div>
+                      <button
+                        onClick={() => setOpenPopover(false)}
+                        className="absolute -top-2 -right-2 bg-black text-white rounded-full w-6 h-6 flex items-center justify-center border-2 border-white text-xs cursor-pointer"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             </ChartContainer>
-            {openPopover && selectedBar && (
-              <div
-                ref={popoverRef}
-                className="absolute w-80 bg-white dark:bg-neutral-900 border shadow-lg rounded-md p-3 text-sm z-50 animate-in fade-in zoom-in-95 duration-150"
-                style={{
-                  left: popoverPos.x + 25,
-                  top: popoverPos.y + 150,
-                  transform: popoverPos.transform
-                }}
-              >
-                <div className="flex justify-between w-full content-center">
-                  <span className="font-semibold text-xl mb-2 content-center">Fecha: {selectedBar.fullLabel.split(" ")[0]}</span>
-                  <div className="flex gap-2">
-                    <Button variant="yellow" size="icon" tooltip="Editar" onClick={() => on_click_editar(selectedBar)}>
-                      <Icons icon="edit" />
-                    </Button>
-                    <Button variant="red" size="icon" tooltip="Eliminar" onClick={() => on_click_eliminar(selectedBar)}>
-                      <Icons icon="delete" />
-                    </Button>
-                  </div>
-                </div>
-                <p className="mt-1 wrap-break-word whitespace-normal mb-4">
-                  <span className="font-semibold">Descripción:</span> {selectedBar.description}
-                </p>
-                <div className="flex justify-end gap-2 mt-3">
-                  <Button variant="orange">
-                    <Icons icon="pdf" />
-                    Ver PDF
-                  </Button>
-                  <Button variant="blue">
-                    <Icons icon="image" />
-                    Ver Imagen
-                  </Button>
-                </div>
-              </div>
-            )}
           </CardContent>
           <CardFooter className="flex-col items-start gap-2 text-sm shrink-0">
             <div className="flex gap-2 leading-none font-medium">
